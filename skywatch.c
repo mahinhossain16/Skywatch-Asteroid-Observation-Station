@@ -19,39 +19,55 @@ struct Request queue[MAX];
 struct Telescope telescope[TEL];
 
 int front = 0, rear = -1;
-int nextID = 1, telescopeCount = 0;
+int nextID = 1, requestCount = 0;
+int telescopeCount = 0;
 
 void submitRequest()
 {
-    if (rear == MAX - 1) {
+    if (requestCount == MAX) {
         printf("Request limit is full.\n");
         return;
     }
 
-    rear++;
+    if (rear == MAX - 1)
+        rear = 0;
+    else
+        rear++;
+
     queue[rear].id = nextID++;
 
     printf("Organization Name: ");
     scanf(" %[^\n]", queue[rear].organization);
 
     strcpy(queue[rear].status, "Pending");
+    requestCount++;
+
     printf("Request submitted successfully. Request ID: %d\n",
            queue[rear].id);
 }
 
 void checkStatus()
 {
-    int id, i;
+    int id, i, index;
 
     printf("Enter Request ID: ");
     scanf("%d", &id);
 
-    for (i = 0; i <= rear; i++)
-        if (queue[i].id == id) {
+    index = front;
+
+    for (i = 0; i < requestCount; i++) {
+        if (queue[index].id == id) {
             printf("Organization: %s | Status: %s\n",
-                   queue[i].organization, queue[i].status);
+                   queue[index].organization,
+                   queue[index].status);
             return;
         }
+
+        if (index == MAX - 1)
+            index = 0;
+        else
+            index++;
+    }
 
     printf("Request not found.\n");
 }
@@ -74,38 +90,54 @@ void addTelescope()
 
 void viewRequests()
 {
-    int i;
+    int i, index;
 
-    if (front > rear) {
+    if (requestCount == 0) {
         printf("No observation requests are waiting.\n");
         return;
     }
 
-    for (i = front; i <= rear; i++)
+    index = front;
+
+    for (i = 0; i < requestCount; i++) {
         printf("ID: %d | Organization: %s | Status: %s\n",
-               queue[i].id, queue[i].organization,
-               queue[i].status);
+               queue[index].id,
+               queue[index].organization,
+               queue[index].status);
+
+        if (index == MAX - 1)
+            index = 0;
+        else
+            index++;
+    }
 }
 
 void assignTelescope()
 {
     int i;
 
-    if (front > rear) {
+    if (requestCount == 0) {
         printf("No observation request is waiting.\n");
         return;
     }
 
-    for (i = 0; i < telescopeCount; i++)
+    for (i = 0; i < telescopeCount; i++) {
         if (telescope[i].free) {
             telescope[i].free = 0;
             strcpy(queue[front].status, "Observing");
 
             printf("Request %d assigned to Telescope: %s\n",
                    queue[front].id, telescope[i].name);
-            front++;
+
+            if (front == MAX - 1)
+                front = 0;
+            else
+                front++;
+
+            requestCount--;
             return;
         }
+    }
 
     printf("No telescope is currently available.\n");
 }
@@ -136,8 +168,10 @@ void organizationPanel()
         printf("3. Back\nChoice: ");
         scanf("%d", &choice);
 
-        if (choice == 1) submitRequest();
-        else if (choice == 2) checkStatus();
+        if (choice == 1)
+            submitRequest();
+        else if (choice == 2)
+            checkStatus();
 
     } while (choice != 3);
 }
@@ -155,10 +189,14 @@ void adminPanel()
         printf("5. Back\nChoice: ");
         scanf("%d", &choice);
 
-        if (choice == 1) addTelescope();
-        else if (choice == 2) viewRequests();
-        else if (choice == 3) assignTelescope();
-        else if (choice == 4) releaseTelescope();
+        if (choice == 1)
+            addTelescope();
+        else if (choice == 2)
+            viewRequests();
+        else if (choice == 3)
+            assignTelescope();
+        else if (choice == 4)
+            releaseTelescope();
 
     } while (choice != 5);
 }
@@ -174,8 +212,10 @@ int main()
         printf("3. Exit\nChoice: ");
         scanf("%d", &choice);
 
-        if (choice == 1) organizationPanel();
-        else if (choice == 2) adminPanel();
+        if (choice == 1)
+            organizationPanel();
+        else if (choice == 2)
+            adminPanel();
 
     } while (choice != 3);
 
