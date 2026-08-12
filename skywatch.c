@@ -25,7 +25,7 @@ int telescopeCount = 0;
 void submitRequest()
 {
     if (requestCount == MAX) {
-        printf("Request limit is full.\n");
+        printf("Request queue is full.\n");
         return;
     }
 
@@ -48,25 +48,17 @@ void submitRequest()
 
 void checkStatus()
 {
-    int id, i, index;
+    int id, i;
 
     printf("Enter Request ID: ");
     scanf("%d", &id);
 
-    index = front;
-
-    for (i = 0; i < requestCount; i++) {
-        if (queue[index].id == id) {
+    for (i = 0; i < MAX; i++) {
+        if (queue[i].id == id) {
             printf("Organization: %s | Status: %s\n",
-                   queue[index].organization,
-                   queue[index].status);
+                   queue[i].organization, queue[i].status);
             return;
         }
-
-        if (index == MAX - 1)
-            index = 0;
-        else
-            index++;
     }
 
     printf("Request not found.\n");
@@ -90,25 +82,25 @@ void addTelescope()
 
 void viewRequests()
 {
-    int i, index;
+    int i, position;
 
     if (requestCount == 0) {
         printf("No observation requests are waiting.\n");
         return;
     }
 
-    index = front;
+    position = front;
 
     for (i = 0; i < requestCount; i++) {
         printf("ID: %d | Organization: %s | Status: %s\n",
-               queue[index].id,
-               queue[index].organization,
-               queue[index].status);
+               queue[position].id,
+               queue[position].organization,
+               queue[position].status);
 
-        if (index == MAX - 1)
-            index = 0;
+        if (position == MAX - 1)
+            position = 0;
         else
-            index++;
+            position++;
     }
 }
 
