@@ -9,9 +9,11 @@ Without a proper system, it becomes difficult to:
 4.Avoid assigning one telescope to multiple organizations.
 
 
+
 Project Summary
 
 Our project provides a simple way to manage asteroid observation requests and limited telescope resources. It organizes requests in FIFO order using a Queue and tracks telescope availability using an Array. This helps reduce confusion, manage resources efficiently, and ensure fair access to telescopes.
+
 
 
 Used Data Structures
