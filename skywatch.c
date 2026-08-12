@@ -6,43 +6,43 @@
 #define TEL 5
 
 struct Request {
-    int id, telescopeID;
+    int id;
     char organization[30];
     char status[15];
 };
 
 struct Telescope {
-    int id, free;
     char name[30];
+    int free;
+    int requestID;
 };
 
 struct Request queue[MAX];
 struct Telescope telescope[TEL];
 
 int front = 0, rear = -1;
-int nextID = 1, requestCount = 0, telescopeCount = 0;
-
-int inputNumber()
-{
-    char input[20];
-    fgets(input, sizeof(input), stdin);
-    return atoi(input);
-}
+int nextID = 1, requestCount = 0;
+int telescopeCount = 0;
 
 void submitRequest()
 {
+    char input[50];
+
     if (requestCount == MAX) {
         printf("Request queue is full.\n");
         return;
     }
 
-    rear = (rear + 1) % MAX;
+    if (rear == MAX - 1)
+        rear = 0;
+    else
+        rear++;
+
     queue[rear].id = nextID++;
-    queue[rear].telescopeID = 0;
 
     printf("Organization Name: ");
     fgets(queue[rear].organization, 30, stdin);
-    queue[rear].organization[strcspn(queue[rear].organization, "\n")] = 0;
+    queue[rear].organization[strcspn(queue[rear].organization, "\n")] = '\0';
 
     strcpy(queue[rear].status, "Pending");
     requestCount++;
@@ -53,17 +53,21 @@ void submitRequest()
 
 void checkStatus()
 {
+    char input[20];
     int id, i;
 
     printf("Enter Request ID: ");
-    id = inputNumber();
+    fgets(input, sizeof(input), stdin);
+    id = atoi(input);
 
-    for (i = 0; i < MAX; i++)
+    for (i = 0; i < MAX; i++) {
         if (queue[i].id == id) {
             printf("Organization: %s | Status: %s\n",
-                   queue[i].organization, queue[i].status);
+                   queue[i].organization,
+                   queue[i].status);
             return;
         }
+    }
 
     printf("Request not found.\n");
 }
@@ -75,34 +79,41 @@ void addTelescope()
         return;
     }
 
-    telescope[telescopeCount].id = telescopeCount + 1;
-
     printf("Telescope Name: ");
     fgets(telescope[telescopeCount].name, 30, stdin);
     telescope[telescopeCount].name[
-        strcspn(telescope[telescopeCount].name, "\n")] = 0;
+        strcspn(telescope[telescopeCount].name, "\n")
+    ] = '\0';
 
     telescope[telescopeCount].free = 1;
-
-    printf("Telescope added. Telescope ID: %d\n",
-           telescope[telescopeCount].id);
+    telescope[telescopeCount].requestID = 0;
     telescopeCount++;
+
+    printf("Telescope added successfully. Telescope ID: %d\n",
+           telescopeCount);
 }
 
 void viewRequests()
 {
-    int i, position = front;
+    int i, position;
 
     if (requestCount == 0) {
         printf("No observation requests are waiting.\n");
         return;
     }
 
+    position = front;
+
     for (i = 0; i < requestCount; i++) {
         printf("ID: %d | Organization: %s | Status: %s\n",
-               queue[position].id, queue[position].organization,
+               queue[position].id,
+               queue[position].organization,
                queue[position].status);
-        position = (position + 1) % MAX;
+
+        if (position == MAX - 1)
+            position = 0;
+        else
+            position++;
     }
 }
 
@@ -115,66 +126,94 @@ void assignTelescope()
         return;
     }
 
-    for (i = 0; i < telescopeCount; i++)
+    for (i = 0; i < telescopeCount; i++) {
+
         if (telescope[i].free) {
+
             telescope[i].free = 0;
-            queue[front].telescopeID = telescope[i].id;
+            telescope[i].requestID = queue[front].id;
+
             strcpy(queue[front].status, "Observing");
 
             printf("Request %d assigned to Telescope ID: %d\n",
-                   queue[front].id, telescope[i].id);
+                   queue[front].id,
+                   i + 1);
 
-            front = (front + 1) % MAX;
+            if (front == MAX - 1)
+                front = 0;
+            else
+                front++;
+
             requestCount--;
             return;
         }
+    }
 
     printf("No telescope is currently available.\n");
 }
 
 void releaseTelescope()
 {
-    int id, i;
+    char input[20];
+    int number, requestID, i;
 
     printf("Enter Telescope ID: ");
-    id = inputNumber();
+    fgets(input, sizeof(input), stdin);
+    number = atoi(input);
 
-    if (id < 1 || id > telescopeCount) {
+    if (number < 1 || number > telescopeCount) {
         printf("Invalid telescope ID.\n");
         return;
     }
 
-    telescope[id - 1].free = 1;
+    if (telescope[number - 1].free) {
+        printf("Telescope is already available.\n");
+        return;
+    }
 
-    for (i = 0; i < MAX; i++)
-        if (queue[i].telescopeID == id &&
-            strcmp(queue[i].status, "Observing") == 0) {
+    requestID = telescope[number - 1].requestID;
+
+    for (i = 0; i < MAX; i++) {
+        if (queue[i].id == requestID) {
             strcpy(queue[i].status, "Observed");
             break;
         }
+    }
+
+    telescope[number - 1].free = 1;
+    telescope[number - 1].requestID = 0;
 
     printf("Telescope released successfully.\n");
 }
 
 void organizationPanel()
 {
+    char input[20];
     int choice;
 
     do {
         printf("\n--- Organization Panel ---\n");
         printf("1. Submit Observation Request\n");
         printf("2. Check Request Status\n");
-        printf("3. Back\nChoice: ");
-        choice = inputNumber();
+        printf("3. Back\n");
+        printf("Choice: ");
 
-        if (choice == 1) submitRequest();
-        else if (choice == 2) checkStatus();
+        if (fgets(input, sizeof(input), stdin) == NULL)
+            return;
+
+        choice = atoi(input);
+
+        if (choice == 1)
+            submitRequest();
+        else if (choice == 2)
+            checkStatus();
 
     } while (choice != 3);
 }
 
 void adminPanel()
 {
+    char input[20];
     int choice;
 
     do {
@@ -183,30 +222,47 @@ void adminPanel()
         printf("2. View Observation Requests\n");
         printf("3. Assign Telescope\n");
         printf("4. Release Telescope\n");
-        printf("5. Back\nChoice: ");
-        choice = inputNumber();
+        printf("5. Back\n");
+        printf("Choice: ");
 
-        if (choice == 1) addTelescope();
-        else if (choice == 2) viewRequests();
-        else if (choice == 3) assignTelescope();
-        else if (choice == 4) releaseTelescope();
+        if (fgets(input, sizeof(input), stdin) == NULL)
+            return;
+
+        choice = atoi(input);
+
+        if (choice == 1)
+            addTelescope();
+        else if (choice == 2)
+            viewRequests();
+        else if (choice == 3)
+            assignTelescope();
+        else if (choice == 4)
+            releaseTelescope();
 
     } while (choice != 5);
 }
 
 int main()
 {
+    char input[20];
     int choice;
 
     do {
         printf("\n=== ASTEROID OBSERVATION STATION ===\n");
         printf("1. Organization Panel\n");
         printf("2. Observation Station Admin\n");
-        printf("3. Exit\nChoice: ");
-        choice = inputNumber();
+        printf("3. Exit\n");
+        printf("Choice: ");
 
-        if (choice == 1) organizationPanel();
-        else if (choice == 2) adminPanel();
+        if (fgets(input, sizeof(input), stdin) == NULL)
+            break;
+
+        choice = atoi(input);
+
+        if (choice == 1)
+            organizationPanel();
+        else if (choice == 2)
+            adminPanel();
 
     } while (choice != 3);
 
