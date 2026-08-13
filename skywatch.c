@@ -186,6 +186,29 @@ void releaseTelescope()
     printf("Telescope released successfully.\n");
 }
 
+void viewTelescopes()
+{
+    int i;
+
+    if (telescopeCount == 0) {
+        printf("No telescopes have been added.\n");
+        return;
+    }
+
+    printf("\n--- Telescope List ---\n");
+
+    for (i = 0; i < telescopeCount; i++) {
+        printf("Telescope ID: %d | Name: %s | Status: ",
+               i + 1, telescope[i].name);
+
+        if (telescope[i].free)
+            printf("Available\n");
+        else
+            printf("Busy (Request ID: %d)\n",
+                   telescope[i].requestID);
+    }
+}
+
 void organizationPanel()
 {
     char input[20];
@@ -222,7 +245,8 @@ void adminPanel()
         printf("2. View Observation Requests\n");
         printf("3. Assign Telescope\n");
         printf("4. Release Telescope\n");
-        printf("5. Back\n");
+        printf("5. View Telescopes\n");
+        printf("6. Back\n");
         printf("Choice: ");
 
         if (fgets(input, sizeof(input), stdin) == NULL)
@@ -238,8 +262,10 @@ void adminPanel()
             assignTelescope();
         else if (choice == 4)
             releaseTelescope();
+        else if (choice == 5)
+            viewTelescopes();
 
-    } while (choice != 5);
+    } while (choice != 6);
 }
 
 int main()
